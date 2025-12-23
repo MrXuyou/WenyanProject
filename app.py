@@ -6,7 +6,7 @@ from datetime import datetime
 # ========================
 # 配置
 # ========================
-CSV_PATH = "extracted_questions.csv"
+CSV_PATH = "/Users/zhouzhou/Documents/WenyanProject/extracted_questions.csv"
 
 # 题目数量配置
 NUM_SINGLE = 30      # 单选题数量
@@ -234,24 +234,64 @@ if st.session_state.submitted:
     st.markdown(st.session_state.id)
     st.markdown(f'答题时间:{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     st.metric("总得分", f"{total_score} 分")
-    # st.write(f"答对 {correct_count} / {total_q} 题")
-
-    # csv = scores_df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8")
-
-    # st.download_button(
-    #     label="📥 下载我的成绩",
-    #     data=csv,
-    #     file_name=f"考试成绩_{st.session_state.name}_{st.session_state.id}.csv",
-    #     mime="text/csv"
-    # )
 
     # 答题详情
     with st.expander("📊 查看答题详情"):
         st.dataframe(pd.DataFrame(details), use_container_width=True)
 
-    # 重考按钮
-    # if st.button("🔄 重新考试"):
-    #     keys_to_clear = ["name", "id", "initialized", "questions", "user_answers", "submitted"]
-    #     for k in keys_to_clear:
-    #         st.session_state.pop(k, None)
-    #     st.rerun()
+        # ================================
+    # 🔐 将本次成绩追加到会话内的成绩表
+    # ================================
+    # 初始化全局成绩表（仅当前会话）
+    if "scores_df" not in st.session_state:
+        st.session_state.scores_df = pd.DataFrame(columns=["姓名", "学号", "总分", "答题时间"])
+
+    # 追加当前考生成绩
+    new_row = pd.DataFrame([{
+        "姓名": st.session_state.name,
+        "学号": st.session_state.id,
+        "总分": total_score,
+        "答题时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    }])
+    st.session_state.scores_df = pd.concat(
+        [st.session_state.scores_df, new_row], 
+        ignore_index=True
+    )
+
+    # ================================
+    # 👨‍🏫 教师统计面板（需密码）
+    # ================================
+    with st.expander("🔒 教师入口：查看/编辑成绩"):
+        pwd = st.text_input("输入管理密码", type="password", key="admin_pwd")
+        
+        if pwd == "admin123":  # ← 改成你的密码
+            st.success("✅ 密码正确！")
+            
+            # 显示可编辑表格
+            edited_df = st.data_editor(
+                st.session_state.scores_df,
+                use_container_width=True,
+                num_rows="dynamic"
+            )
+            
+            # 更新 session_state（如果用户编辑了）
+            st.session_state.scores_df = edited_df
+            
+            # 下载按钮
+            csv_all = edited_df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8")
+            st.download_button(
+                "📥 下载全部成绩",
+                data=csv_all,
+                file_name="全体考生成绩.csv",
+                mime="text/csv"
+            )
+            
+            # 显示统计摘要
+            if not edited_df.empty:
+                st.subheader("📈 快速统计")
+                col1, col2, col3 = st.columns(3)
+                col1.metric("人数", len(edited_df))
+                col2.metric("平均分", f"{edited_df['总分'].mean():.1f}")
+                col3.metric("最高分", edited_df["总分"].max())
+        elif pwd:
+            st.warning("⚠️ 密码错误")
