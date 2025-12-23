@@ -6,7 +6,8 @@ from datetime import datetime
 # ========================
 # 配置
 # ========================
-CSV_PATH = "/Users/zhouzhou/Documents/WenyanProject/extracted_questions.csv"
+# CSV_PATH = "/Users/zhouzhou/Documents/WenyanProject/extracted_questions.csv"
+CSV_PATH = "extracted_questions.csv"
 
 # 题目数量配置
 NUM_SINGLE = 30      # 单选题数量
