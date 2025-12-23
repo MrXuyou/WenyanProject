@@ -7,16 +7,8 @@ enableXsrfProtection = true
 # 禁用用于调试的彩虹菜单（这会让界面看起来更像一个独立的Web应用）
 toolbarMode = "none"
 
-[ui]
-# 隐藏左侧的默认导航侧边栏（如果你使用了多页面功能，这会隐藏默认的页面列表）
-hideSidebarNav = true
-
 # 针对 Streamlit 1.16+ 版本，隐藏底部的菜单栏
 footerHidden = true
 # 隐藏顶部的“部署”（Deploy）和“以 GitHub 格式显示”等装饰性元素
 showSidebarNavigation = false
 
-
-[global]
-# 禁用通过 URL 自动加载的实验性功能
-disableUpdateCheck = true
