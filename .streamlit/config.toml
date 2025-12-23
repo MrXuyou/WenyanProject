@@ -15,14 +15,7 @@ hideSidebarNav = true
 footerHidden = true
 # 隐藏顶部的“部署”（Deploy）和“以 GitHub 格式显示”等装饰性元素
 showSidebarNavigation = false
-[browser]
-# 禁用浏览器的默认打开行为，同时影响某些在线验证
-serverAddress = "0.0.0.0"
-serverPort = 8501
 
-[feature_flags]
-# 禁用基线指标收集（这可能会触发某些网络请求）
-collect_metrics = false
 
 [global]
 # 禁用通过 URL 自动加载的实验性功能
