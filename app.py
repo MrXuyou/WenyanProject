@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 import re
 from datetime import datetime
+from supabase import create_client, Client
+
+supabase = create_client(
+    st.secrets["SUPABASE_URL"],
+    st.secrets["SUPABASE_KEY"]
+)
 
 # ========================
 # 配置
@@ -235,64 +241,41 @@ if st.session_state.submitted:
     st.markdown(st.session_state.id)
     st.markdown(f'答题时间:{datetime.now().strftime("%Y-%m-%d %H:%M:%S")}')
     st.metric("总得分", f"{total_score} 分")
-
+    
     # 答题详情
     with st.expander("📊 查看答题详情"):
         st.dataframe(pd.DataFrame(details), use_container_width=True)
 
-        # ================================
-    # 🔐 将本次成绩追加到会话内的成绩表
-    # ================================
-    # 初始化全局成绩表（仅当前会话）
-    if "scores_df" not in st.session_state:
-        st.session_state.scores_df = pd.DataFrame(columns=["姓名", "学号", "总分", "答题时间"])
+        try:
+    # 插入成绩
+            response = supabase.table("exam_scores").insert({
+                "name": st.session_state.name,
+                "id": st.session_state.id,
+                "score": total_score,
+                "datetime": datetime.now().isoformat()
+            }).execute()
 
-    # 追加当前考生成绩
-    new_row = pd.DataFrame([{
-        "姓名": st.session_state.name,
-        "学号": st.session_state.id,
-        "总分": total_score,
-        "答题时间": datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    }])
-    st.session_state.scores_df = pd.concat(
-        [st.session_state.scores_df, new_row], 
-        ignore_index=True
-    )
+            if response.status_code == 201:
+                st.success("✅ 成绩已成功提交到数据库！")
+            else:
+                st.error(f"❌ 提交失败：{response.text}")
+        except Exception as e:
+            st.error(f"❌ 数据库连接异常：{e}")
 
-    # ================================
-    # 👨‍🏫 教师统计面板（需密码）
-    # ================================
+
+    # # ================================
+    # # 👨‍🏫 教师统计面板（需密码）
+    # # ================================
     with st.expander("🔒 教师入口：查看/编辑成绩"):
         pwd = st.text_input("输入管理密码", type="password", key="admin_pwd")
-        
-        if pwd == "admin123":  # ← 改成你的密码
-            st.success("✅ 密码正确！")
-            
-            # 显示可编辑表格
-            edited_df = st.data_editor(
-                st.session_state.scores_df,
-                use_container_width=True,
-                num_rows="dynamic"
-            )
-            
-            # 更新 session_state（如果用户编辑了）
-            st.session_state.scores_df = edited_df
-            
-            # 下载按钮
-            csv_all = edited_df.to_csv(index=False, encoding="utf-8-sig").encode("utf-8")
-            st.download_button(
-                "📥 下载全部成绩",
-                data=csv_all,
-                file_name="全体考生成绩.csv",
-                mime="text/csv"
-            )
-            
-            # 显示统计摘要
-            if not edited_df.empty:
-                st.subheader("📈 快速统计")
-                col1, col2, col3 = st.columns(3)
-                col1.metric("人数", len(edited_df))
-                col2.metric("平均分", f"{edited_df['总分'].mean():.1f}")
-                col3.metric("最高分", edited_df["总分"].max())
-        elif pwd:
-            st.warning("⚠️ 密码错误")
+        if pwd == "admin123":
+            try:
+                response = supabase.table("exam_scores").select("*").execute()
+                df = pd.DataFrame(response.data)
+                if not df.empty:
+                    st.dataframe(df)
+                    # 显示统计...
+                else:
+                    st.info("暂无成绩")
+            except Exception as e:
+                st.error(f"加载失败：{e}")
