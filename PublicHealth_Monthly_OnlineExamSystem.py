@@ -289,42 +289,42 @@ if st.session_state.submitted:
         st.metric("总得分", f"{total_score} 分")
         
         # 答题详情
-        with st.expander("📊 查看答题详情"):
-            st.dataframe(pd.DataFrame(details), use_container_width=True)
+    with st.expander("📊 查看答题详情"):
+        st.dataframe(pd.DataFrame(details), use_container_width=True)
 
-            try:
-            # 插入成绩
-                response = supabase.table("exam_scores").insert({
-                    "name": st.session_state.name,
-                    "id": st.session_state.id,
-                    "score": total_score,
-                    "datetime": datetime.now().isoformat()
-                }).execute()
+        try:
+        # 插入成绩
+            response = supabase.table("exam_scores").insert({
+                "name": st.session_state.name,
+                "id": st.session_state.id,
+                "score": total_score,
+                "datetime": datetime.now().isoformat()
+            }).execute()
 
-                if response.status_code == 201:
-                    st.success("✅ 成绩已成功提交到数据库！")
-                else:
-                    st.error(f"❌ 提交失败：{response.text}")
-            except Exception as e:
-                st.error(f"❌ 数据库连接异常：{e}")
+            if response.status_code == 201:
+                st.success("✅ 成绩已成功提交到数据库！")
+            else:
+                st.error(f"❌ 提交失败：{response.text}")
+        except Exception as e:
+            st.error(f"❌ 数据库连接异常：{e}")
 
-        # # ================================
-        # # 👨‍🏫 教师统计面板（需密码）
-        # # ================================
-        with st.expander("🔒 教师入口：查看/编辑成绩"):
-            pwd = st.text_input("输入管理密码", type="password", key="admin_pwd")
-            if pwd == "admin123":
-                if supabase is None:
-                    if supabase_error:
-                        st.warning(f"无法加载成绩：{supabase_error}")
-                else:
-                    try:
-                        response = supabase.table("exam_scores").select("*").execute()
-                        df = pd.DataFrame(getattr(response, "data", []))
-                        if not df.empty:
-                            st.dataframe(df)
-                            # 显示统计...
-                        else:
-                            st.info("暂无成绩")
-                    except Exception as e:
-                        st.error(f"加载失败：{e}")
+    # # ================================
+    # # 👨‍🏫 教师统计面板（需密码）
+    # # ================================
+    with st.expander("🔒 教师入口：查看/编辑成绩"):
+        pwd = st.text_input("输入管理密码", type="password", key="admin_pwd")
+        if pwd == "admin123":
+            if supabase is None:
+                if supabase_error:
+                    st.warning(f"无法加载成绩：{supabase_error}")
+            else:
+                try:
+                    response = supabase.table("exam_scores").select("*").execute()
+                    df = pd.DataFrame(getattr(response, "data", []))
+                    if not df.empty:
+                        st.dataframe(df)
+                        # 显示统计...
+                    else:
+                        st.info("暂无成绩")
+                except Exception as e:
+                    st.error(f"加载失败：{e}")
