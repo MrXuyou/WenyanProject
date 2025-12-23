@@ -292,27 +292,22 @@ if st.session_state.submitted:
         with st.expander("📊 查看答题详情"):
             st.dataframe(pd.DataFrame(details), use_container_width=True)
 
-            if supabase is None:
-                if supabase_error:
-                    st.warning(f"⏸️ 未提交到数据库：{supabase_error}")
-            else:
-                try:
-        # 插入成绩
-                    response = supabase.table("exam_scores").insert({
-                        "name": st.session_state.name,
-                        "id": st.session_state.id,
-                        "score": total_score,
-                        "datetime": datetime.now().isoformat()
-                    }).execute()
+            try:
+            # 插入成绩
+                response = supabase.table("exam_scores").insert({
+                    "name": st.session_state.name,
+                    "id": st.session_state.id,
+                    "score": total_score,
+                    "datetime": datetime.now().isoformat()
+                }).execute()
 
-                    status_code = getattr(response, "status_code", None)
-                    response_text = getattr(response, "text", "")
-                    if status_code == 201:
-                        st.success("✅ 成绩已成功提交到数据库！")
-                    else:
-                        st.error(f"❌ 提交失败：{response_text or status_code}")
-                except Exception as e:
-                    st.error(f"❌ 数据库连接异常：{e}")
+                if response.status_code == 201:
+                    st.success("✅ 成绩已成功提交到数据库！")
+                else:
+                    st.error(f"❌ 提交失败：{response.text}")
+            except Exception as e:
+                st.error(f"❌ 数据库连接异常：{e}")
+
         # # ================================
         # # 👨‍🏫 教师统计面板（需密码）
         # # ================================
